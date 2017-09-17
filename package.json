@@ -5,7 +5,7 @@
   "main": "index.js",
   "bin": "index.js",
   "author": "harry lachenmayer <harrylachenmayer@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "dat-node": "^3.5.3",
     "hypercore": "^6.9.1",

@@ -4,15 +4,19 @@ const Dat = require('dat-node')
 const datStorage = require('dat-node/lib/storage')
 const fs = require('fs')
 const crypto = require('hypercore/lib/crypto')
-const argv = require('minimist')(process.argv.slice(2))
+const minimist = require('minimist')
 const neatLog = require('neat-log')
 const output = require('neat-log/output')
+
+const argv = minimist(process.argv.slice(2), {
+  string: ['_', 'write-file', 'create-dat']
+})
 
 if (argv._.length < 1) {
   console.error('usage: vanity-dat [word]')
   console.error('options:')
   console.error('  --write-file filename - write keys to filename.key and filename.secret_key')
-  console.error('  --create-dat datname - create a dat using the generated keys')
+  console.error('  --create-dat location - create a dat using the generated keys')
   process.exit(1)
 }
 
@@ -27,9 +31,11 @@ function view (state) {
   const runtime = Math.floor((Date.now() - startTime) / 1000)
   if (state.done) {
     const final = state.top[0]
-    const secretKeyMessage = argv['write-file'] == null && argv['create-dat'] == null ? `your secret key: ${final.secretKey}` : ''
-    const fileMessage = argv['write-file'] ? `you can find the key pair in the files ${filename}.public and ${filename}.secret` : ''
-    const datMessage = argv['create-dat'] ? `a new dat was created in ${argv['create-dat']}.` : ''
+    const filename = argv['write-file']
+    const datLocation = argv['create-dat']
+    const secretKeyMessage = filename == null && datLocation == null ? `your secret key: ${final.secretKey}` : ''
+    const fileMessage = filename ? `you can find the key pair in the files ${filename}.public and ${filename}.secret` : ''
+    const datMessage = datLocation ? `a new dat was created in ${datLocation}.` : ''
     return output`
       done! :)
       your vanity wasted ${runtime} seconds of computing power.
