@@ -7,6 +7,7 @@
   "author": "harry lachenmayer <harrylachenmayer@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "dat-node": "^3.5.3",
     "hypercore": "^6.9.1",
     "minimist": "^1.2.0",
     "neat-log": "^1.1.1"

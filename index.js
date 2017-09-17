@@ -1,3 +1,7 @@
+#!/usr/bin/env node
+
+const Dat = require('dat-node')
+const datStorage = require('dat-node/lib/storage')
 const fs = require('fs')
 const crypto = require('hypercore/lib/crypto')
 const argv = require('minimist')(process.argv.slice(2))
@@ -7,13 +11,13 @@ const output = require('neat-log/output')
 if (argv._.length < 1) {
   console.error('usage: vanity-dat [word]')
   console.error('options:')
-  console.error('  -o filename - write keys to filename.key and filename.secret_key - defaults to [word]')
+  console.error('  --write-file filename - write keys to filename.key and filename.secret_key')
+  console.error('  --create-dat datname - create a dat using the generated keys')
   process.exit(1)
 }
 
 const word = argv._[0]
 const hexWord = wordToHex(word)
-const filename = argv.o || word
 const startTime = Date.now()
 const topLimit = 3
 
@@ -22,11 +26,15 @@ const log = neatLog(view)
 function view (state) {
   const runtime = Math.floor((Date.now() - startTime) / 1000)
   if (state.done) {
+    const final = state.top[0]
+    const secretKeyMessage = argv['write-file'] == null && argv['create-dat'] == null ? `your secret key: ${final.secretKey}` : ''
+    const fileMessage = argv['write-file'] ? `you can find the key pair in the files ${filename}.public and ${filename}.secret` : ''
+    const datMessage = argv['create-dat'] ? `a new dat was created in ${argv['create-dat']}.` : ''
     return output`
       done! :)
       your vanity wasted ${runtime} seconds of computing power.
-      here's your public key: ${state.top[0].publicKey}
-      you can find the key pair in the files ${filename}.public and ${filename}.secret
+      your public key: ${final.publicKey}
+      ${[secretKeyMessage, fileMessage, datMessage].join(fileMessage && datMessage ? '\n' : '')}
     `
   }
   const tops = state.top.map(({prefixLength, publicKey, secretKey}) => {
@@ -65,6 +73,16 @@ log.use((state, bus) => {
     bus.emit('found', keyPairWithPrefix(hexWord))
   }
   if (state.top.length > 0) {
+    const keyPair = state.top[0].keyPair
+    const filename = argv['write-file']
+    if (filename != null) {
+      writeKeys(filename, keyPair)
+    }
+    const datLocation = argv['create-dat']
+    if (datLocation != null) {
+      createDat(datLocation, keyPair)
+    }
+
     state.done = true
     bus.emit('render')
   }
@@ -97,6 +115,17 @@ function bestPrefixLength (top) {
 function writeKeys (filename, keyPair) {
   fs.writeFileSync(`${filename}.key`, keyPair.publicKey)
   fs.writeFileSync(`${filename}.secret_key`, keyPair.secretKey)
+}
+
+// Creates a new dat archive & then overwrites the metadata keys with the ones we've generated.
+function createDat (location, keyPair) {
+  Dat(location, (err, dat) => {
+    if (err) console.log(err)
+    const storage = datStorage(location, {})
+    const opts = {key: keyPair.publicKey, discoveryKey: crypto.discoveryKey(keyPair.publicKey)}
+    storage.metadata('key', opts).write(0, keyPair.publicKey, err => { if (err) console.error(err) })
+    storage.metadata('secret_key', opts).write(0, keyPair.secretKey, err => { if (err) console.error(err) })
+  })
 }
 
 function wordToHex (word) {
