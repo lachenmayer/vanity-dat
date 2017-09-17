@@ -1,0 +1,14 @@
+{
+  "name": "vanity-dat",
+  "version": "1.0.0",
+  "description": "Create dat archives with a prefix of your choice.",
+  "main": "index.js",
+  "bin": "index.js",
+  "author": "harry lachenmayer <harrylachenmayer@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "hypercore": "^6.9.1",
+    "minimist": "^1.2.0",
+    "neat-log": "^1.1.1"
+  }
+}
